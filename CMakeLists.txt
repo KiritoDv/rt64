@@ -160,7 +160,7 @@ function(build_ray_shader TARGETOBJ SHADERNAME)
     endif()
 endfunction()
 
-find_package(SDL2 QUIT)
+find_package(SDL2 QUIET)
 if(NOT ${SDL2_FOUND})
     # Point cmake at src/contrib/mupen64plus-win32-deps/SDL2-2.26.3 for SDL2 on windows, look for an installed package on other systems
     if (${WIN32})
