@@ -160,16 +160,16 @@ function(build_ray_shader TARGETOBJ SHADERNAME)
     endif()
 endfunction()
 
-# Point cmake at src/contrib/mupen64plus-win32-deps/SDL2-2.26.3 for SDL2 on windows, look for an installed package on other systems
-if (${WIN32})
-    set(SDL2_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}/src/contrib/mupen64plus-win32-deps/SDL2-2.26.3/include")
-    set(SDL2_LIBRARIES "SDL2" "SDL2main")
-    link_directories("${PROJECT_SOURCE_DIR}/src/contrib/mupen64plus-win32-deps/SDL2-2.26.3/lib/x64")
-else()
-    find_package(SDL2 REQUIRED)
+find_package(SDL2 QUIT)
+if(NOT ${SDL2_FOUND})
+    # Point cmake at src/contrib/mupen64plus-win32-deps/SDL2-2.26.3 for SDL2 on windows, look for an installed package on other systems
+    if (${WIN32})
+        set(SDL2_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}/src/contrib/mupen64plus-win32-deps/SDL2-2.26.3/include")
+        set(SDL2_LIBRARIES "SDL2" "SDL2main")
+        link_directories("${PROJECT_SOURCE_DIR}/src/contrib/mupen64plus-win32-deps/SDL2-2.26.3/lib/x64")
+    endif()
+    message(STATUS "${SDL2_INCLUDE_DIRS} ${SDL2_LIBRARIES}")
 endif()
-
-message(STATUS "${SDL2_INCLUDE_DIRS} ${SDL2_LIBRARIES}")
 
 add_compile_definitions(
     HLSL_CPU
