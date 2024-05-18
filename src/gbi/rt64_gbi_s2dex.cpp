@@ -41,7 +41,7 @@ namespace RT64 {
             }
         }
 
-        void bg1CycTMEMLoadTile(RDP &rdp, const uObjScaleBg_t &scaleBg, uint32_t imagePtr, uint16_t imageSrcWsize, int16_t loadLines, int16_t tmemSH) {
+        void bg1CycTMEMLoadTile(RDP &rdp, const uObjScaleBg_t &scaleBg, ptr_t imagePtr, uint16_t imageSrcWsize, int16_t loadLines, int16_t tmemSH) {
             // TODO: Does it make sense that when using 32-bit images, the lrt is 0?
             const bool is32Bits = (scaleBg.imageSiz == G_IM_SIZ_32b);
             uint8_t textureImageSiz = is32Bits ? G_IM_SIZ_32b : G_IM_SIZ_16b;
@@ -49,15 +49,15 @@ namespace RT64 {
             rdp.setTextureImage(G_IM_FMT_RGBA, textureImageSiz, imageSrcWsize >> 1, imagePtr);
             rdp.loadTile(G_TX_LOADTILE, 0, 0, (tmemSH - 1) << 4, tileLrt);
         }
-        
-        void bg1CycTMEMSetAndLoadTile(RDP &rdp, const uObjScaleBg_t &scaleBg, uint32_t imagePtr, uint16_t imageSrcWsize, int16_t loadLines, uint16_t tmemSliceWmax, int16_t tmemAdrs, int16_t tmemSH) {
+
+        void bg1CycTMEMSetAndLoadTile(RDP &rdp, const uObjScaleBg_t &scaleBg, ptr_t imagePtr, uint16_t imageSrcWsize, int16_t loadLines, uint16_t tmemSliceWmax, int16_t tmemAdrs, int16_t tmemSH) {
             const bool is32Bits = (scaleBg.imageSiz == G_IM_SIZ_32b);
             uint8_t setSiz = is32Bits ? G_IM_SIZ_32b : G_IM_SIZ_16b;
             rdp.setTile(G_TX_LOADTILE, G_IM_FMT_RGBA, setSiz, tmemSliceWmax, tmemAdrs, 0, G_TX_WRAP | G_TX_NOMIRROR, G_TX_WRAP | G_TX_NOMIRROR, G_TX_NOMASK, G_TX_NOMASK, G_TX_NOLOD, G_TX_NOLOD);
             bg1CycTMEMLoadTile(rdp, scaleBg, imagePtr, imageSrcWsize, loadLines, tmemSH);
         }
 
-        void bg1CycTMEMLoad(RDP &rdp, const uObjScaleBg_t &scaleBg, uint32_t imageTop, uint32_t &imagePtr, int16_t &imageRemain, uint16_t imageSrcWsize, uint16_t imagePtrX0, 
+        void bg1CycTMEMLoad(RDP &rdp, const uObjScaleBg_t &scaleBg, uint32_t imageTop, ptr_t &imagePtr, int16_t &imageRemain, uint16_t imageSrcWsize, uint16_t imagePtrX0,
             int16_t tmemSrcLines, uint16_t tmemSliceWmax, int16_t drawLines, int16_t usesBilerp, int16_t flagSplit)
         {
             int16_t loadLines = drawLines + usesBilerp;
@@ -76,7 +76,7 @@ namespace RT64 {
                 int16_t subSliceL2 = loadLines - subSliceY2;
                 int16_t subSliceD2 = drawLines - subSliceY2;
                 if (subSliceL2 > 0) {
-                    uint32_t imagePtr2 = imageTop + imagePtrX0;
+                    ptr_t imagePtr2 = imageTop + imagePtrX0;
                     if (subSliceY2 & 0x1) {
                         imagePtr2 -= imageSrcWsize;
                         imagePtr2 = imageTopSeg | (imagePtr2 & 0x00FFFFFF);
@@ -133,13 +133,13 @@ namespace RT64 {
 
             RDP *rdp = state->rdp.get();
             RSP *rsp = state->rsp.get();
-            const uint32_t rdramAddress = state->rsp->fromSegmented((*dl)->w1);
+            const ptr_t rdramAddress = state->rsp->fromSegmented((*dl)->w1);
             // TODO load this into the S2D struct buffer for a more accurate implementation in case there's ever command state bleed.
             const uObjBg *bgObject = reinterpret_cast<const uObjBg *>(state->fromRDRAM(rdramAddress));
             const uObjBg_t &bg = bgObject->bg;
             const uObjScaleBg_t &scaleBg = bgObject->scaleBg;
 
-            // Validate the image loading method is one of the two supported methods. It's worth noting 
+            // Validate the image loading method is one of the two supported methods. It's worth noting
             // that despite the load block method being documented, it doesn't actually work in the retail
             // microcode and it should therefore be treated as load tile as well.
             assert((bg.imageLoad == S2DEX_G_BGLT_LOADBLOCK) || (bg.imageLoad == S2DEX_G_BGLT_LOADTILE));
@@ -161,7 +161,7 @@ namespace RT64 {
             frameHmax = std::max(scaleBg.frameH - frameHmax, 0);
             frameW -= frameWmax;
             frameH -= frameHmax;
-            
+
             int16_t frameX0 = scaleBg.frameX;
             int16_t frameY0 = scaleBg.frameY;
             const bool imageFlipS = scaleBg.imageFlip & S2DEX_G_BG_FLAG_FLIPS;
@@ -198,7 +198,7 @@ namespace RT64 {
             int16_t frameRemain = frameH >> 2;
             int16_t imageSrcW = scaleBg.imageW << 3;
             int16_t imageSrcH = scaleBg.imageH << 3;
-            
+
             // Find the corresponding range in the image for the frame.
             // The image size needs to be extended when using bilerp.
             int16_t usesBilerp = (rsp->objRenderMode & S2DEX_G_OBJRM_BILERP) ? 1 : 0;
@@ -206,7 +206,7 @@ namespace RT64 {
             // Some games will incorrectly set this flag despite not actually using bilerp during drawing. The side effect is that it'll end
             // up using a method of loading textures that makes it almost impossible for the emulation to detect tiles that can be upscaled due
             // to the various shenanigans the microcode has to do to load an image that is bigger than what it really is.
-            // 
+            //
             // This enhancement falls under the category of a developer intended fix because there's a clear mismatch between the end result
             // and the loading method used to achieve it, as evidenced by the current state of the RDP. The end result is it makes the loading
             // logic much simpler and allows the emulation to upscale the tiles properly.
@@ -230,7 +230,7 @@ namespace RT64 {
             int16_t imageY0 = scaleBg.imageY + (pixY0 * scaleH >> 7);
             int32_t imageYorig = scaleBg.imageYorig;
 
-            // Keep scrolling down the image one row at a time if the 
+            // Keep scrolling down the image one row at a time if the
             // left of the image is greater than the source's width.
             while (imageX0 >= imageSrcW) {
                 imageX0 -= imageSrcW;
@@ -311,10 +311,10 @@ namespace RT64 {
                 imageIY0 -= imageHLowered;
             }
 
-            const uint32_t imageAddress = state->rsp->fromSegmented(scaleBg.imageAddress);
+            const ptr_t imageAddress = state->rsp->fromSegmented(scaleBg.imageAddress);
             uint16_t imageSrcWsize = (imageSrcW / tmemShift) << 3;
             uint16_t imagePtrX0 = (imageX0 / tmemShift) << 3;
-            uint32_t imagePtr = imageAddress + imageSrcWsize * imageIY0 + imagePtrX0;
+            ptr_t imagePtr = imageAddress + imageSrcWsize * imageIY0 + imagePtrX0;
             uint16_t imageS = imageX0 & tmemMask;
             if (imageFlipS) {
                 imageS = -(imageS + imageW);
@@ -344,7 +344,7 @@ namespace RT64 {
             }
 
             rdp->setTileSize(G_TX_RENDERTILE, 0, 0, 0, 0);
-            
+
             // Draw the image.
             int16_t imageRemain = tmemSrcLines - imageIY0;
             int16_t imageSliceH = imageISliceL0;
@@ -388,22 +388,22 @@ namespace RT64 {
             RT64_LOG_PRINTF("bg1Cyc::end(0x%08X)", (*dl)->w1);
 #       endif
         }
-        
+
         void bgCopy(State *state, DisplayList **dl) {
             // TODO: Reimplement more accurately to match the microcode.
 
 #       ifdef LOG_BGRECT_METHODS
             RT64_LOG_PRINTF("bgCopy::start(0x%08X)", (*dl)->w1);
 #       endif
-            
+
             RDP *rdp = state->rdp.get();
             RSP* rsp = state->rsp.get();
-            const uint32_t rdramAddress = state->rsp->fromSegmented((*dl)->w1);
+            const ptr_t rdramAddress = state->rsp->fromSegmented((*dl)->w1);
             // TODO load this into the S2D struct buffer for a more accurate implementation in case there's ever command state bleed.
             const uObjBg *bgObject = reinterpret_cast<const uObjBg *>(state->fromRDRAM(rdramAddress));
             const uObjBg_t &bg = bgObject->bg;
             assert(bg.imageLoad == S2DEX_G_BGLT_LOADTILE); // TODO: Only the load tile version is implemented.
-            
+
             const uint16_t TMEMAddress = 0;
             const uint8_t lineShiftOffset = (bg.imageSiz == G_IM_SIZ_32b) ? 1 : 0;
             const uint16_t bgLine = bg.imageW >> (2 + bg.imageSiz - lineShiftOffset);
@@ -451,7 +451,7 @@ namespace RT64 {
 
         void readS2DStruct(State *state, uint32_t ptr, uint32_t loadSize) {
             // Convert the segmented obj pointer
-            uint32_t rdramAddress = state->rsp->fromSegmented(ptr);
+            ptr_t rdramAddress = state->rsp->fromSegmented(ptr);
             // Mask the address as the RSP DMA hardware would
             rdramAddress &= RSP_DMA_MASK;
             // Truncate the load size as the ucode does
@@ -533,7 +533,7 @@ namespace RT64 {
         #endif
             // Load the struct from rdram
             readS2DStruct(state, (*dl)->w1, ((*dl)->w0 & 0xFFFFFF) + 1);
-            
+
             // Execute the texture load
             const uObjTxSprite* obj = (uObjTxSprite*)state->rsp->S2D.struct_buffer.data();
             doLoadTxtr(state, &obj->txtr);
@@ -548,11 +548,11 @@ namespace RT64 {
         #endif
             // Load the struct from rdram
             readS2DStruct(state, (*dl)->w1, ((*dl)->w0 & 0xFFFFFF) + 1);
-            
+
             // Execute the texture load
             const uObjTxSprite* obj = (uObjTxSprite*)state->rsp->S2D.struct_buffer.data();
             doLoadTxtr(state, &obj->txtr);
-            
+
             // Execute the sprite draw
             // TODO call doObjSprite(state, &obj->sprite) when it's implemented
             assert(false);
@@ -567,11 +567,11 @@ namespace RT64 {
         #endif
             // Load the struct from rdram
             readS2DStruct(state, (*dl)->w1, ((*dl)->w0 & 0xFFFFFF) + 1);
-            
+
             // Execute the texture load
             const uObjTxSprite* obj = (uObjTxSprite*)state->rsp->S2D.struct_buffer.data();
             doLoadTxtr(state, &obj->txtr);
-            
+
             // Execute the rect draw
             // TODO call doObjRectangle(state, &obj->sprite) when it's implemented
             assert(false);
@@ -590,7 +590,7 @@ namespace RT64 {
             // Execute the texture load
             const uObjTxSprite* obj = (uObjTxSprite*)state->rsp->S2D.struct_buffer.data();
             doLoadTxtr(state, &obj->txtr);
-            
+
             // Execute the rect r draw
             // TODO call doObjRectangleR(state, &obj->sprite) when it's implemented
             assert(false);

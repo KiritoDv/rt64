@@ -9,7 +9,7 @@
 namespace RT64 {
     // RenderTargetKey
 
-    RenderTargetKey::RenderTargetKey(uint32_t address, uint32_t width, uint32_t siz, Framebuffer::Type fbType) {
+    RenderTargetKey::RenderTargetKey(ptr_t address, uint32_t width, uint32_t siz, Framebuffer::Type fbType) {
         this->address = address;
         this->width = width;
         this->siz = siz;
@@ -23,7 +23,7 @@ namespace RT64 {
     bool RenderTargetKey::isEmpty() const {
         return (width == 0) || (fbType == Framebuffer::Type::None);
     }
-    
+
     // RenderTargetManager
 
     void RenderTargetManager::setMultisampling(const RenderMultisampling &multisampling) {
@@ -47,7 +47,7 @@ namespace RT64 {
         target = std::make_unique<RenderTarget>(key.address, key.fbType, multisampling);
         return *target;
     }
-    
+
     void RenderTargetManager::destroyAll() {
         targetMap.clear();
     }
@@ -76,7 +76,7 @@ namespace RT64 {
         this->colorTarget = colorTarget;
         this->depthTarget = depthTarget;
         this->framebufferKey = framebufferKey;
-        
+
         colorTargetRevision = colorTarget->textureRevision;
         depthTargetRevision = (depthTarget != nullptr) ? depthTarget->textureRevision : 0;
 

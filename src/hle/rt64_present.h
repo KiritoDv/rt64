@@ -11,7 +11,7 @@
 
 namespace RT64 {
     struct DebuggerFramebuffer {
-        uint32_t address = 0;
+        ptr_t address = 0;
         bool view = false;
     };
 

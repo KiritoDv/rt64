@@ -28,20 +28,20 @@ namespace RT64 {
         w0 = w1 = 0;
     }
 
-    uint32_t DisplayList::p0(uint8_t pos, uint8_t bits) const {
+    ptr_t DisplayList::p0(uint8_t pos, uint8_t bits) const {
         return ((w0 >> pos) & ((0x01 << bits) - 1));
     }
 
-    uint32_t DisplayList::p1(uint8_t pos, uint8_t bits) const {
+    ptr_t DisplayList::p1(uint8_t pos, uint8_t bits) const {
         return ((w1 >> pos) & ((0x01 << bits) - 1));
     }
 
     // ****************************************************************************************
     // * Database of known GBI versions.                                                      *
     // ****************************************************************************************
-    // 
+    //
     //                  Constant                      Identifier                                   UCode                    LowP    NoN     ReJ     MVP     Point
-    // 
+    //
     const GBIInstance   F3D_SM64                  = { "SW Version: 2.0D, 04-01-96 (SM64)",         GBIUCode::F3D,         { false,  false,  false,  false,  false } };
     const GBIInstance   F3DEX_1_21                = { "F3DEX 1.21",                                GBIUCode::F3DEX,       { false,  false,  false,  false,  false } };
     const GBIInstance   F3DLX_1_21_REJ            = { "F3DLX 1.21.Rej",                            GBIUCode::F3DEX,       { true,   false,  true,   false,  false } };
@@ -61,13 +61,13 @@ namespace RT64 {
     const GBIInstance   S2DEX2_FIFO_2_05          = { "S2DEX.fifo 2.05",                           GBIUCode::S2DEX2,      { false,  false,  false,  false,  false } };
     const GBIInstance   S2DEX2_FIFO_2_05_SAFE     = { "S2DEX.fifo 2.05 [Safe]",                    GBIUCode::S2DEX2,      { false,  false,  false,  false,  false } };
     const GBIInstance   S2DEX2_FIFO_2_08          = { "S2DEX2.fifo 2.08",                          GBIUCode::S2DEX2,      { false,  false,  false,  false,  false } };
-    
+
     // ****************************************************************************************
     // * Database of known UCode text and data segments.                                      *
     // ****************************************************************************************
-    // 
-    //                  Length      Hash                    Known instances               
-    //     
+    //
+    //                  Length      Hash                    Known instances
+    //
     static std::array<GBISegment, 19> textSegments = {
             GBISegment{ 0x1408,     0xF50165C013FCB8A2ULL,  { &F3D_SM64 } },
             GBISegment{ 0x1430,     0x9A7772037D709388ULL,  { &F3DEX_1_21 } },
@@ -129,7 +129,7 @@ namespace RT64 {
     GBIManager::~GBIManager() {
         // Does nothing.
     }
-    
+
     GBI *GBIManager::getGBIForRDP() {
         GBI &gbi = gbiCache[uint32_t(GBIUCode::RDP)];
         if (gbi.ucode == GBIUCode::Unknown) {
@@ -139,20 +139,20 @@ namespace RT64 {
 
         return &gbi;
     }
-    
-    GBI *GBIManager::getGBIForUCode(uint8_t *RDRAM, uint32_t textAddress, uint32_t dataAddress) {
+
+    GBI *GBIManager::getGBIForUCode(uint8_t *RDRAM, ptr_t textAddress, ptr_t dataAddress) {
         assert(RDRAM != nullptr);
 
         int32_t textSegmentIndex = -1;
         uint8_t *rdramCursor = &RDRAM[textAddress];
-        uint32_t rdramHashed = 0;
+        ptr_t rdramHashed = 0;
         uint64_t rdramHash = 0;
         XXH3_state_t xxh3;
         XXH3_64bits_reset(&xxh3);
 
         auto hashSegment = [&](uint32_t index, const GBISegment &gbiSegment, int32_t &resultIndex) {
             if (gbiSegment.hashLength > rdramHashed) {
-                const uint32_t rdramToHash = gbiSegment.hashLength - rdramHashed;
+                const ptr_t rdramToHash = gbiSegment.hashLength - rdramHashed;
                 XXH3_64bits_update(&xxh3, rdramCursor, rdramToHash);
                 rdramHash = XXH3_64bits_digest(&xxh3);
                 rdramCursor += rdramToHash;

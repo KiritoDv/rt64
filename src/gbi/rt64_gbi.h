@@ -11,6 +11,7 @@
 
 #define UCODE_MAP_SIZE 256
 
+
 namespace RT64 {
     typedef void (*GBIReset)(State *state);
     typedef void (*GBIFunction)(State *state, DisplayList **dl);
@@ -65,13 +66,13 @@ namespace RT64 {
     };
 
     struct GBIManager {
-        std::array<GBI, static_cast<uint32_t>(GBIUCode::Count)> gbiCache;
+        std::array<GBI, static_cast<ptr_t>(GBIUCode::Count)> gbiCache;
 
         GBIManager();
         ~GBIManager();
         GBI *getGBIForRDP();
-        GBI *getGBIForUCode(uint8_t *RDRAM, uint32_t textAddress, uint32_t dataAddress);
-        void deduceGBIInformation(uint8_t *RDRAM, uint32_t textAddress, uint32_t dataAddress);
+        GBI *getGBIForUCode(uint8_t *RDRAM, ptr_t textAddress, ptr_t dataAddress);
+        void deduceGBIInformation(uint8_t *RDRAM, ptr_t textAddress, ptr_t dataAddress);
         GBIFunction getExtendedFunction() const;
     };
 };

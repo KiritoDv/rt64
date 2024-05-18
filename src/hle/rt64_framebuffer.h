@@ -22,8 +22,8 @@ namespace RT64 {
             Depth
         };
 
-        uint32_t addressStart;
-        uint32_t addressEnd;
+        ptr_t addressStart;
+        ptr_t addressEnd;
         uint8_t siz;
         uint32_t width;
         uint32_t height;
@@ -65,7 +65,7 @@ namespace RT64 {
     };
 
     struct FramebufferTile {
-        uint32_t address;
+        ptr_t address;
         uint8_t siz;
         uint8_t fmt;
         uint32_t left;

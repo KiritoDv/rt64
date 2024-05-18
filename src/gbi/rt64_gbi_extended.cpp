@@ -73,7 +73,7 @@ namespace RT64 {
             const uint16_t lry = (*dl)->p1(0, 16);
             state->rdp->setScissor(mode, ulx, uly, lrx, lry, extAlignment);
         }
-        
+
         void setRectAlignV1(State *state, DisplayList **dl) {
             ExtendedAlignment extAlignment;
             extAlignment.leftOrigin = (*dl)->p1(0, 12);
@@ -95,7 +95,7 @@ namespace RT64 {
             const int16_t y = (*dl)->p0(0, 16);
             state->rsp->setViewportAlign(ori, x, y);
         }
-        
+
         void setScissorAlignV1(State *state, DisplayList **dl) {
             ExtendedAlignment extAlignment;
             extAlignment.leftOrigin = (*dl)->p1(0, 12);
@@ -171,7 +171,7 @@ namespace RT64 {
             const uint8_t force = (*dl)->p1(0, 1);
             state->rdp->forceScaleLOD(force);
         }
-        
+
         void forceBranchV1(State *state, DisplayList **dl) {
             const uint8_t force = (*dl)->p1(0, 1);
             state->rsp->forceBranch(force);
@@ -288,8 +288,8 @@ namespace RT64 {
                 uint32_t hookOp = (*dl)->p1(28, 4);
                 switch (hookOp) {
                 case RT64_HOOK_OP_GETVERSION: {
-                    const uint32_t rdramAddress = state->rsp->fromSegmented(hookValue);
-                    uint32_t *returnRDRAM = reinterpret_cast<uint32_t *>(state->fromRDRAM(rdramAddress));
+                    const ptr_t rdramAddress = state->rsp->fromSegmented(hookValue);
+                    ptr_t *returnRDRAM = reinterpret_cast<ptr_t *>(state->fromRDRAM(rdramAddress));
                     *returnRDRAM = G_EX_VERSION;
                     break;
                 }
@@ -299,7 +299,7 @@ namespace RT64 {
                         assert(false && "Unimplemented invalid extended opcode.");
                         // TODO: Crash the emulator with an error message indicating RT64 does not allow this extended opcode to be registered.
                     }
-                    
+
                     state->enableExtendedGBI(extendedOpCode);
                     break;
                 }
@@ -312,7 +312,7 @@ namespace RT64 {
                         state->pushReturnAddress(*dl);
                     }
 
-                    const uint32_t rdramAddress = state->rsp->fromSegmented(hookValue);
+                    const ptr_t rdramAddress = state->rsp->fromSegmented(hookValue);
                     *dl = reinterpret_cast<DisplayList *>(state->fromRDRAM(rdramAddress)) - 1;
                     break;
                 }

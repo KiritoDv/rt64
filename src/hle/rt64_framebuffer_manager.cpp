@@ -23,18 +23,18 @@ namespace RT64 {
     }
 
     // FramebufferManager
-    
+
     FramebufferManager::FramebufferManager() {
         writeTimestamp = 0;
     }
 
     FramebufferManager::~FramebufferManager() { }
-    
-    Framebuffer &FramebufferManager::get(uint32_t address, uint8_t siz, uint32_t width, uint32_t height) {
+
+    Framebuffer &FramebufferManager::get(ptr_t address, uint8_t siz, uint32_t width, uint32_t height) {
         auto &fb = framebuffers[address];
         fb.widthChanged = (fb.width != width);
         fb.sizChanged = (fb.siz != siz);
-        
+
         if (fb.widthChanged || fb.sizChanged) {
             fb.maxHeight = height;
             fb.readHeight = 0;
@@ -51,7 +51,7 @@ namespace RT64 {
         return fb;
     }
 
-    Framebuffer *FramebufferManager::find(uint32_t address) const {
+    Framebuffer *FramebufferManager::find(ptr_t address) const {
         auto it = framebuffers.find(address);
         if (it != framebuffers.end()) {
             return const_cast<Framebuffer *>(&it->second);
@@ -60,8 +60,8 @@ namespace RT64 {
             return nullptr;
         }
     }
-    
-    Framebuffer *FramebufferManager::findMostRecentContaining(uint32_t addressStart, uint32_t addressEnd) {
+
+    Framebuffer *FramebufferManager::findMostRecentContaining(ptr_t addressStart, ptr_t addressEnd) {
         Framebuffer *mostRecent = nullptr;
         auto it = framebuffers.begin();
         while (it != framebuffers.end()) {
@@ -86,8 +86,8 @@ namespace RT64 {
 
         return mostRecent;
     }
-    
-    void FramebufferManager::writeChanges(RenderWorker *renderWorker, const FramebufferChangePool &fbChangePool, const FramebufferOperation &op, 
+
+    void FramebufferManager::writeChanges(RenderWorker *renderWorker, const FramebufferChangePool &fbChangePool, const FramebufferOperation &op,
         RenderTargetManager &targetManager, const ShaderLibrary *shaderLibrary)
     {
         auto it = framebuffers.find(op.writeChanges.address);
@@ -109,7 +109,7 @@ namespace RT64 {
             tileCopy.ignore = true;
             return;
         }
-        
+
         const FramebufferTile &fbTile = op.createTileCopy.fbTile;
         const uint32_t tileWidth = std::clamp<long>(lround((fbTile.right - fbTile.left) * resolutionScale.x), 1L, RenderTarget::MaxDimension);
         const uint32_t tileHeight = std::clamp<long>(lround((fbTile.bottom - fbTile.top) * resolutionScale.y), 1L, RenderTarget::MaxDimension);
@@ -151,7 +151,7 @@ namespace RT64 {
             const RenderTexture *framebufferTexture = tileCopy.texture.get();
             tileCopy.framebuffer = renderWorker->device->createFramebuffer(RenderFramebufferDesc(&framebufferTexture, 1));
         }
-        
+
         RenderTargetKey colorTargetKey(fbIt->second.addressStart, fbIt->second.width, fbIt->second.siz, Framebuffer::Type::Color);
         RenderTarget &colorTarget = targetManager.get(colorTargetKey);
         uint32_t rtWidth, rtHeight, rtMisalignX;
@@ -175,7 +175,7 @@ namespace RT64 {
         }
     }
 
-    void FramebufferManager::createTileCopyRecord(RenderWorker *renderWorker, const FramebufferOperation &op, const FramebufferStorage &fbStorage, 
+    void FramebufferManager::createTileCopyRecord(RenderWorker *renderWorker, const FramebufferOperation &op, const FramebufferStorage &fbStorage,
         RenderTargetManager &targetManager, const hlslpp::float2 resolutionScale, uint32_t maxFbPairIndex, CommandListCopies &cmdListCopies,
         const ShaderLibrary *shaderLibrary)
     {
@@ -196,7 +196,7 @@ namespace RT64 {
                 colorTarget.copyFromChanges(renderWorker, *fbChange, fbIt->second.width, fbIt->second.height, 0, shaderLibrary);
             }
         }
-        
+
         // Copy from depth target if the last write was a depth buffer.
         if (fbIt->second.lastWriteType == Framebuffer::Type::Depth) {
             RenderTargetKey depthTargetKey(fbIt->second.addressStart, fbIt->second.width, fbIt->second.siz, Framebuffer::Type::Depth);
@@ -237,7 +237,7 @@ namespace RT64 {
         copyRegion.pushConstants.uvScale = { float(srcRight - tileCopy.left), float(srcBottom - tileCopy.top) };
         cmdListCopies.cmdListCopyRegions.push_back(copyRegion);
     }
-    
+
     void FramebufferManager::reinterpretTileSetup(RenderWorker *renderWorker, const FramebufferOperation &op, hlslpp::float2 resolutionScale) {
         assert(tileCopies.find(op.reinterpretTile.srcId) != tileCopies.end());
 
@@ -374,12 +374,12 @@ namespace RT64 {
         cmdListReinterpretations.cmdListDispatches.emplace_back(dispatch);
     }
 
-    bool FramebufferManager::makeFramebufferTile(Framebuffer *fb, uint32_t addressStart, uint32_t addressEnd, uint32_t lineWidth, uint32_t tileHeight, FramebufferTile &outTile, bool RGBA32) {
+    bool FramebufferManager::makeFramebufferTile(Framebuffer *fb, ptr_t addressStart, ptr_t addressEnd, uint32_t lineWidth, uint32_t tileHeight, FramebufferTile &outTile, bool RGBA32) {
         assert(fb != nullptr);
 
         // We need to figure out the best fitting tile from the address range specified and the TMEM Regions this tile must be stored on.
         // The tile width and height parameters won't be 0 on load tile operations. They will however be 0 on load block operations.
-        
+
         // If the starting address is lower than the framebuffer address, we move a row one by one according to the stride specified of the original image width.
         uint32_t tileRowStart = 0;
         uint32_t fbStride = fb->imageRowBytes(fb->width);
@@ -387,7 +387,7 @@ namespace RT64 {
             addressStart += fbStride;
             tileRowStart++;
         }
-        
+
         // We went over the allowed address range, a tile copy is impossible.
         if (addressStart >= fb->addressEnd) {
             return false;
@@ -398,7 +398,7 @@ namespace RT64 {
         if (minEndAddress <= addressStart) {
             return false;
         }
-        
+
         // Figure out how many rows we could possibly given the current address range.
         const uint32_t fbBytes = minEndAddress - fb->addressStart;
         const uint32_t fbMinRow = (addressStart - fb->addressStart) / fbStride;
@@ -501,7 +501,7 @@ namespace RT64 {
         return op;
     }
 
-    void FramebufferManager::insertRegionsTMEM(uint32_t addressStart, uint32_t tmemStart, uint32_t tmemWords, uint32_t tmemMask, bool RGBA32, bool syncRequired, std::vector<RegionIterator> *resultRegions) {
+    void FramebufferManager::insertRegionsTMEM(ptr_t addressStart, uint32_t tmemStart, uint32_t tmemWords, uint32_t tmemMask, bool RGBA32, bool syncRequired, std::vector<RegionIterator> *resultRegions) {
         if (resultRegions != nullptr) {
             resultRegions->clear();
         }
@@ -643,7 +643,7 @@ namespace RT64 {
                     {
                         // Do nothing.
                     }
-                    // Tile reinterpretation is always enabled if the source is an 8-bit FB, since special 
+                    // Tile reinterpretation is always enabled if the source is an 8-bit FB, since special
                     // sampling and decoding are required.
                     else if (it->fbTile.siz == G_IM_SIZ_8b) {
                         reinterpret = true;
@@ -831,7 +831,7 @@ namespace RT64 {
             fbIndex++;
         }
     }
-    
+
     void FramebufferManager::resetTracking() {
         auto it = framebuffers.begin();
         while (it != framebuffers.end()) {
@@ -840,7 +840,7 @@ namespace RT64 {
             it++;
         }
     }
-    
+
     void FramebufferManager::hashTracking(const uint8_t *RDRAM) {
         auto it = framebuffers.begin();
         while (it != framebuffers.end()) {
@@ -852,7 +852,7 @@ namespace RT64 {
         }
     }
 
-    void FramebufferManager::changeRAM(Framebuffer *changedFb, uint32_t addressStart, uint32_t addressEnd) {
+    void FramebufferManager::changeRAM(Framebuffer *changedFb, ptr_t addressStart, ptr_t addressEnd) {
         assert(changedFb != nullptr);
 
         auto it = framebuffers.begin();
@@ -943,7 +943,7 @@ namespace RT64 {
             }
 
             renderWorker->commandList->barriers(RenderBarrierStage::GRAPHICS, tileCopyBeforeBarriers);
-            
+
             // Use the rasterization pipeline to copy the texture regions. Using the dedicated transfer commands does not behave consistently
             // enough across hardware to use it directly when it comes to synchronization due to unknown reasons found during testing (probably
             // due to transfer granularity or synchronization exceptions on legacy barriers when it comes to copy operations).
@@ -1007,7 +1007,7 @@ namespace RT64 {
     }
 
     void FramebufferManager::performDiscards(const std::vector<uint32_t> &discards) {
-        for (uint32_t address : discards) {
+        for (ptr_t address : discards) {
             auto it = framebuffers.find(address);
             if (it != framebuffers.end()) {
                 framebuffers.erase(it);

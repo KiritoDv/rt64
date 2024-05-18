@@ -19,7 +19,7 @@ namespace RT64 {
         };
 
         struct {
-            uint32_t address = 0;
+            ptr_t address = 0;
             uint8_t fmt = 0;
             uint8_t siz = 0;
             uint16_t width = 0;
@@ -27,11 +27,11 @@ namespace RT64 {
         } colorImage;
 
         struct {
-            uint32_t address = 0;
+            ptr_t address = 0;
             bool formatChanged = false;
         } depthImage;
 
-        uint32_t displayListAddress;
+        ptr_t displayListAddress;
         uint64_t displayListCounter;
         std::vector<Projection> projections;
         uint32_t projectionCount;

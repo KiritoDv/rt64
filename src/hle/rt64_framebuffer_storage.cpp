@@ -19,7 +19,7 @@ namespace RT64 {
         handleVector.clear();
     }
 
-    void FramebufferStorage::store(uint32_t fbPairIndex, uint32_t address, const uint8_t *data, uint32_t size) {
+    void FramebufferStorage::store(uint32_t fbPairIndex, ptr_t address, const uint8_t *data, uint32_t size) {
         uint32_t dstIndex = rdramUsed;
         rdramUsed += size;
         if (rdramUsed > rdramData.size()) {
@@ -37,7 +37,7 @@ namespace RT64 {
         handleVector.emplace_back(handle);
     }
 
-    const FramebufferStorage::Handle *FramebufferStorage::get(uint32_t maxFbPairIndex, uint32_t address) const {
+    const FramebufferStorage::Handle *FramebufferStorage::get(uint32_t maxFbPairIndex, ptr_t address) const {
         const FramebufferStorage::Handle *maxHandle = nullptr;
         for (const auto &handle : handleVector) {
             if (handle.fbPairIndex > maxFbPairIndex) {

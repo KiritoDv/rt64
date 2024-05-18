@@ -15,12 +15,12 @@
 
 namespace RT64 {
     // RenderTarget
-    
+
     const RenderFormat RenderTarget::ColorBufferFormat = RenderFormat::R8G8B8A8_UNORM;
     const RenderFormat RenderTarget::DepthBufferFormat = RenderFormat::D32_FLOAT;
     const long RenderTarget::MaxDimension = 0x4000L;
 
-    RenderTarget::RenderTarget(uint32_t addressForName, Framebuffer::Type type, const RenderMultisampling &multisampling) {
+    RenderTarget::RenderTarget(ptr_t addressForName, Framebuffer::Type type, const RenderMultisampling &multisampling) {
         this->addressForName = addressForName;
         this->type = type;
         this->multisampling = multisampling;
@@ -81,7 +81,7 @@ namespace RT64 {
 
         downsampledTextureMultiplier = 0;
         format = ColorBufferFormat;
-        
+
         RenderClearValue clearValue = RenderClearValue::Color(RenderColor(), format);
         texture = worker->device->createTexture(RenderTextureDesc::ColorTarget(width, height, format, multisampling, &clearValue));
         textureView = texture->createTextureView(RenderTextureViewDesc::Texture2D(format));
@@ -105,7 +105,7 @@ namespace RT64 {
 
         downsampledTextureMultiplier = 0;
         format = DepthBufferFormat;
-        
+
         RenderClearValue clearValue = RenderClearValue::Depth(RenderDepth(), RenderFormat::D32_FLOAT);
         texture = worker->device->createTexture(RenderTextureDesc::DepthTarget(width, height, format, multisampling, &clearValue));
         textureView = texture->createTextureView(RenderTextureViewDesc::Texture2D(format));
@@ -115,7 +115,7 @@ namespace RT64 {
 
     void RenderTarget::setupDummy(RenderWorker *worker) {
         assert(worker != nullptr);
-        
+
         if (dummyTexture == nullptr) {
             dummyTexture = worker->device->createTexture(RenderTextureDesc::ColorTarget(width, height, ColorBufferFormat, multisampling));
             dummyTexture->setName("Render Target Dummy");
@@ -141,7 +141,7 @@ namespace RT64 {
             textureFramebuffer = worker->device->createFramebuffer(RenderFramebufferDesc(&colorTexture, 1, texture.get()));
         }
     }
-    
+
     void RenderTarget::copyFromTarget(RenderWorker *worker, RenderTarget *src, uint32_t x, uint32_t y, uint32_t width, uint32_t height, const ShaderLibrary *shaderLibrary) {
         assert(worker != nullptr);
         assert(src != nullptr);
@@ -204,7 +204,7 @@ namespace RT64 {
             RenderTextureBarrier(src->texture.get(), RenderTextureLayout::RESOLVE_SOURCE),
             RenderTextureBarrier(texture.get(), RenderTextureLayout::RESOLVE_DEST)
         };
-        
+
         const RenderRect srcRect(0, 0, std::min(width, src->width), std::min(height, src->height));
         worker->commandList->barriers(RenderBarrierStage::COPY, resolveBarriers, uint32_t(std::size(resolveBarriers)));
         worker->commandList->resolveTextureRegion(texture.get(), 0, 0, src->texture.get(), &srcRect);
@@ -273,7 +273,7 @@ namespace RT64 {
             targetLeft = 0.0f;
             targetTop = rowStart * resolutionScale.y + ((fbHeight * resolutionScale.y) / 2.0f) - (targetHeight / 2.0f);
         }
-        
+
         // Record the drawing command.
         long scissorLeft = long(floor(targetLeft));
         long scissorTop = long(floor(targetTop));
@@ -309,7 +309,7 @@ namespace RT64 {
         assert(worker != nullptr);
 
         setupDepthFramebuffer(worker);
-        
+
         RenderTextureBarrier clearBarriers[] = {
             RenderTextureBarrier(texture.get(), RenderTextureLayout::DEPTH_WRITE),
             RenderTextureBarrier(dummyTexture.get(), RenderTextureLayout::COLOR_WRITE)
@@ -318,7 +318,7 @@ namespace RT64 {
         worker->commandList->barriers(RenderBarrierStage::GRAPHICS, clearBarriers, uint32_t(std::size(clearBarriers)));
         worker->commandList->setFramebuffer(textureFramebuffer.get());
         worker->commandList->clearDepth();
-        
+
         markForResolve();
     }
 
@@ -360,7 +360,7 @@ namespace RT64 {
         boxFilterCB.ResolutionScale[1] = downsampleMultiplier;
         boxFilterCB.Misalignment[0] = invMisalignX;
         boxFilterCB.Misalignment[1] = 0;
-        
+
         RenderTextureBarrier filterBarriers[] = {
             RenderTextureBarrier(getResolvedTexture(), RenderTextureLayout::SHADER_READ),
             RenderTextureBarrier(downsampledTexture.get(), RenderTextureLayout::GENERAL)
@@ -382,7 +382,7 @@ namespace RT64 {
         if (!resolvedTextureDirty || !usesResolve()) {
             return;
         }
-        
+
         RenderTextureBarrier resolveBarriers[] = {
             RenderTextureBarrier(texture.get(), RenderTextureLayout::RESOLVE_SOURCE),
             RenderTextureBarrier(resolvedTexture.get(), RenderTextureLayout::RESOLVE_DEST)
@@ -404,7 +404,7 @@ namespace RT64 {
     RenderTexture *RenderTarget::getResolvedTexture() const {
         return usesResolve() ? resolvedTexture.get() : texture.get();
     }
-    
+
     RenderTextureView *RenderTarget::getResolvedTextureView() const {
         return usesResolve() ? resolvedTextureView.get() : textureView.get();
     }

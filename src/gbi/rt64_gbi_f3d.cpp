@@ -23,7 +23,7 @@ namespace RT64 {
                 state->rsp->popMatrix(1);
             }
         }
-        
+
         void moveMem(State *state, DisplayList **dl) {
             switch ((*dl)->p0(16, 8)) {
             case F3D_G_MV_VIEWPORT:
@@ -68,7 +68,7 @@ namespace RT64 {
                 break;
             }
         }
-        
+
         void vertex(State *state, DisplayList **dl) {
             state->rsp->setVertex((*dl)->w1, (*dl)->p0(20, 4) + 1, (*dl)->p0(16, 4));
         }
@@ -78,7 +78,7 @@ namespace RT64 {
                 state->pushReturnAddress(*dl);
             }
 
-            const uint32_t rdramAddress = state->rsp->fromSegmented((*dl)->w1);
+            const ptr_t rdramAddress = state->rsp->fromSegmented((*dl)->w1);
             *dl = reinterpret_cast<DisplayList *>(state->fromRDRAM(rdramAddress)) - 1;
         }
 
@@ -93,7 +93,7 @@ namespace RT64 {
         void tri1(State *state, DisplayList **dl) {
             state->rsp->drawIndexedTri((*dl)->p1(16, 8) / 10, (*dl)->p1(8, 8) / 10, (*dl)->p1(0, 8) / 10);
         }
-        
+
         void quad(State *state, DisplayList **dl) {
             const uint8_t v0 = (*dl)->p1(24, 8) / 10;
             const uint8_t v1 = (*dl)->p1(16, 8) / 10;
@@ -155,7 +155,7 @@ namespace RT64 {
                 }
 
                 break;
-            case F3D_G_MW_POINTS: 
+            case F3D_G_MW_POINTS:
                 {
                     const uint32_t value = (*dl)->p0(8, 16);
                     state->rsp->modifyVertex(value / 40, value % 40, (*dl)->w1);
@@ -206,12 +206,12 @@ namespace RT64 {
             const uint8_t fmt = (*dl)->p0(21, 3);
             const uint8_t siz = (*dl)->p0(19, 2);
             const uint16_t width = (*dl)->p0(0, 12) + 1;
-            const uint32_t address = (*dl)->w1;
+            const ptr_t address = (*dl)->w1;
             state->rsp->setColorImage(fmt, siz, width, address);
         }
 
         void setDepthImage(State *state, DisplayList **dl) {
-            const uint32_t address = (*dl)->w1;
+            const ptr_t address = (*dl)->w1;
             state->rsp->setDepthImage(address);
         }
 
@@ -219,7 +219,7 @@ namespace RT64 {
             const uint8_t fmt = (*dl)->p0(21, 3);
             const uint8_t siz = (*dl)->p0(19, 2);
             const uint16_t width = (*dl)->p0(0, 12) + 1;
-            const uint32_t address = (*dl)->w1;
+            const ptr_t address = (*dl)->w1;
             state->rsp->setTextureImage(fmt, siz, width, address);
         }
 
@@ -242,7 +242,7 @@ namespace RT64 {
                 { F3DENUM::G_CULL_BACK, 0x00002000 },
                 { F3DENUM::G_CULL_BOTH, 0x00003000 }
             };
-            
+
             gbi->map[F3D_G_SPNOOP] = &GBI_EXTENDED::noOpHook;
             gbi->map[F3D_G_MTX] = &matrix;
             gbi->map[F3D_G_MOVEMEM] = &moveMem;

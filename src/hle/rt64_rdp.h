@@ -74,7 +74,7 @@ namespace RT64 {
         LoadTile tiles[RDP_TILES];
 
         struct {
-            uint32_t address = 0;
+            ptr_t address = 0;
             uint8_t fmt = 0;
             uint8_t siz = 0;
             uint16_t width = 0;
@@ -82,7 +82,7 @@ namespace RT64 {
         } colorImage;
 
         struct {
-            uint32_t address = 0;
+            ptr_t address = 0;
             bool changed = false;
         } depthImage;
 
@@ -139,12 +139,12 @@ namespace RT64 {
         void reset();
         void crash(CrashReason reason);
         void checkFramebufferPair();
-        void checkFramebufferOverlap(uint32_t tmemStart, uint32_t tmemWords, uint32_t tmemMask, uint32_t addressStart, uint32_t addressEnd, uint32_t tileWidth, uint32_t tileHeight, bool RGBA32, bool makeTileCopy);
-        void checkImageOverlap(uint32_t addressStart, uint32_t addressEnd);
+        void checkFramebufferOverlap(uint32_t tmemStart, uint32_t tmemWords, uint32_t tmemMask, ptr_t addressStart, ptr_t addressEnd, uint32_t tileWidth, uint32_t tileHeight, bool RGBA32, bool makeTileCopy);
+        void checkImageOverlap(ptr_t addressStart, ptr_t addressEnd);
         int32_t movedFromOrigin(int32_t x, uint16_t ori);
-        void setColorImage(uint8_t fmt, uint8_t siz, uint16_t width, uint32_t address);
-        void setDepthImage(uint32_t address);
-        void setTextureImage(uint8_t fmt, uint8_t siz, uint16_t width, uint32_t address);
+        void setColorImage(uint8_t fmt, uint8_t siz, uint16_t width, ptr_t address);
+        void setDepthImage(ptr_t address);
+        void setTextureImage(uint8_t fmt, uint8_t siz, uint16_t width, ptr_t address);
         void setCombine(uint64_t combine);
         void pushCombine();
         void popCombine();

@@ -13,13 +13,13 @@
 
 namespace RT64 {
     struct RenderTargetKey {
-        uint32_t address = 0;
+        ptr_t address = 0;
         uint32_t width = 0;
         uint32_t siz = 0;
         Framebuffer::Type fbType = Framebuffer::Type::None;
 
         RenderTargetKey() = default;
-        RenderTargetKey(uint32_t address, uint32_t width, uint32_t siz, Framebuffer::Type fbType);
+        RenderTargetKey(ptr_t address, uint32_t width, uint32_t siz, Framebuffer::Type fbType);
         uint64_t hash() const;
         bool isEmpty() const;
     };

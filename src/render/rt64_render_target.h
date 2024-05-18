@@ -35,7 +35,7 @@ namespace RT64 {
         std::unique_ptr<TextureCopyDescriptorSet> textureCopyDescSet;
         std::unique_ptr<BoxFilterDescriptorSet> filterDescSet;
         std::unique_ptr<FramebufferWriteDescriptorTextureSet> fbWriteDescSet;
-        uint32_t addressForName = 0;
+        ptr_t addressForName = 0;
         uint32_t width = 0;
         uint32_t height = 0;
         uint64_t textureRevision = 0;
@@ -46,7 +46,7 @@ namespace RT64 {
         int32_t invMisalignX = 0;
         bool resolvedTextureDirty = false;
 
-        RenderTarget(uint32_t addressForName, Framebuffer::Type type, const RenderMultisampling &multisampling);
+        RenderTarget(ptr_t addressForName, Framebuffer::Type type, const RenderMultisampling &multisampling);
         ~RenderTarget();
         void releaseTextures();
         bool resize(RenderWorker *worker, uint32_t newWidth, uint32_t newHeight);

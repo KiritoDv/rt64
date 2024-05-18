@@ -34,13 +34,13 @@ namespace RT64 {
 
         union {
             struct {
-                uint32_t address;
+                ptr_t address;
                 uint64_t id;
                 FramebufferTile fbTile;
             } createTileCopy;
 
             struct {
-                uint32_t address;
+                ptr_t address;
                 uint64_t id;
             } writeChanges;
 
@@ -79,7 +79,7 @@ namespace RT64 {
             std::unique_ptr<RenderTexture> texture;
             uint32_t textureWidth = 0;
             uint32_t textureHeight = 0;
-            uint32_t address = 0;
+            ptr_t address = 0;
             uint32_t left = 0;
             uint32_t top = 0;
             uint32_t usedWidth = 0;
@@ -164,21 +164,21 @@ namespace RT64 {
 
         FramebufferManager();
         ~FramebufferManager();
-        Framebuffer &get(uint32_t address, uint8_t siz, uint32_t width, uint32_t height);
-        Framebuffer *find(uint32_t address) const;
-        Framebuffer *findMostRecentContaining(uint32_t addressStart, uint32_t addressEnd);
+        Framebuffer &get(ptr_t address, uint8_t siz, uint32_t width, uint32_t height);
+        Framebuffer *find(ptr_t address) const;
+        Framebuffer *findMostRecentContaining(ptr_t addressStart, ptr_t addressEnd);
         void writeChanges(RenderWorker *renderWorker, const FramebufferChangePool &fbChangePool, const FramebufferOperation &op, RenderTargetManager &targetManager, const ShaderLibrary *shaderLibrary);
         void clearUsedTileCopies();
         uint64_t findTileCopyId(uint32_t width, uint32_t height);
         void createTileCopySetup(RenderWorker *renderWorker, const FramebufferOperation &op, hlslpp::float2 resolutionScale, RenderTargetManager &targetManager, std::unordered_set<RenderTarget *> *resizedTargets);
-        void createTileCopyRecord(RenderWorker *renderWorker, const FramebufferOperation &op, const FramebufferStorage &fbStorage, RenderTargetManager &targetManager, 
+        void createTileCopyRecord(RenderWorker *renderWorker, const FramebufferOperation &op, const FramebufferStorage &fbStorage, RenderTargetManager &targetManager,
             hlslpp::float2 resolutionScale, uint32_t maxFbPairIndex, CommandListCopies &cmdListCopies, const ShaderLibrary *shaderLibrary);
 
         void reinterpretTileSetup(RenderWorker *renderWorker, const FramebufferOperation &op, hlslpp::float2 resolutionScale);
         void reinterpretTileRecord(RenderWorker *renderWorker, const FramebufferOperation &op, TextureCache &textureCache, hlslpp::float2 resolutionScale,
             uint64_t submissionFrame, CommandListReinterpretations &cmdListReinterpretations);
 
-        bool makeFramebufferTile(Framebuffer *fb, uint32_t addressStart, uint32_t addressEnd, uint32_t lineWidth, uint32_t tileHeight, FramebufferTile &outTile, bool RGBA32);
+        bool makeFramebufferTile(Framebuffer *fb, ptr_t addressStart, ptr_t addressEnd, uint32_t lineWidth, uint32_t tileHeight, FramebufferTile &outTile, bool RGBA32);
 
         FramebufferOperation makeTileCopyTMEM(uint64_t dstTileId, const FramebufferTile &fbTile);
 
@@ -186,7 +186,7 @@ namespace RT64 {
             interop::uint2 texelShift, interop::uint2 texelMask, uint64_t tlutHash, uint32_t tlutFormat);
 
         CheckCopyResult checkTileCopyTMEM(uint32_t tmem, uint32_t lineWidth, uint8_t siz, uint8_t fmt, uint16_t uls);
-        void insertRegionsTMEM(uint32_t addressStart, uint32_t tmemStart, uint32_t tmemWords, uint32_t tmemMask, bool RGBA32, bool syncRequired, std::vector<RegionIterator> *resultRegions);
+        void insertRegionsTMEM(ptr_t addressStart, uint32_t tmemStart, uint32_t tmemWords, uint32_t tmemMask, bool RGBA32, bool syncRequired, std::vector<RegionIterator> *resultRegions);
         void discardRegionsTMEM(uint32_t tmemStart, uint32_t tmemWords, uint32_t tmemMask);
         void storeRAM(FramebufferStorage &fbStorage, const uint8_t *RDRAM, uint32_t fbPairIndex);
         void checkRAM(const uint8_t *RDRAM, std::vector<Framebuffer *> &differentFbs, bool updateHashes);
@@ -195,7 +195,7 @@ namespace RT64 {
 
         void resetTracking();
         void hashTracking(const uint8_t *RDRAM);
-        void changeRAM(Framebuffer *changedFb, uint32_t addressStart, uint32_t addressEnd);
+        void changeRAM(Framebuffer *changedFb, ptr_t addressStart, ptr_t addressEnd);
 
         void resetOperations();
 
@@ -204,9 +204,9 @@ namespace RT64 {
         void recordOperations(RenderWorker *renderWorker, const FramebufferChangePool *fbChangePool, const FramebufferStorage *fbStorage, const ShaderLibrary *shaderLibrary, TextureCache *textureCache,
             const std::vector<FramebufferOperation> &operations, RenderTargetManager &targetManager, hlslpp::float2 resolutionScale, uint32_t maxFbPairIndex,
             uint64_t submissionFrame);
-        
+
         // Execution must finish before calling this again. A convenience function around reset, setup and record.
-        void performOperations(RenderWorker *renderWorker, const FramebufferChangePool *fbChangePool, const FramebufferStorage *fbStorage, const ShaderLibrary *shaderLibrary, TextureCache *textureCache, 
+        void performOperations(RenderWorker *renderWorker, const FramebufferChangePool *fbChangePool, const FramebufferStorage *fbStorage, const ShaderLibrary *shaderLibrary, TextureCache *textureCache,
             const std::vector<FramebufferOperation> &operations, RenderTargetManager &targetManager, hlslpp::float2 resolutionScale, uint32_t maxFbPairIndex,
             uint64_t submissionFrame, std::unordered_set<RenderTarget *> *resizedTargets = nullptr);
 

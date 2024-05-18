@@ -119,10 +119,10 @@ namespace RT64 {
         static std::string attributeName(DrawAttribute attribute);
         bool identityRectScale() const;
     };
-    
+
     struct DrawStatus {
         uint32_t changed;
-        
+
         DrawStatus();
         DrawStatus(uint32_t v);
         void reset();
@@ -152,7 +152,7 @@ namespace RT64 {
     };
 
     struct LoadTexture {
-        uint32_t address;
+        ptr_t address;
         uint8_t fmt;
         uint8_t siz;
         uint16_t width;

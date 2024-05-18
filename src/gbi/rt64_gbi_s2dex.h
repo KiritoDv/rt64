@@ -40,7 +40,7 @@ namespace RT64 {
             uint16_t imageY;
             uint16_t frameH;
             int16_t frameY;
-            uint32_t imageAddress;
+            ptr_t imageAddress;
             uint8_t imageSiz;
             uint8_t imageFmt;
             uint16_t imageLoad;
@@ -63,7 +63,7 @@ namespace RT64 {
             uint16_t imageY;
             uint16_t frameH;
             int16_t frameY;
-            uint32_t imageAddress;
+            ptr_t imageAddress;
             uint8_t imageSiz;
             uint8_t imageFmt;
             uint16_t imageLoad;
@@ -84,7 +84,7 @@ namespace RT64 {
 
         struct uObjTxtr {
             uint32_t type;
-            uint32_t image; // Segmented address
+            ptr_t image; // Segmented address
             uint16_t val1; // These two members swapped for endianness
             uint16_t tmem;
             uint16_t sid; // These two members swapped for endianness

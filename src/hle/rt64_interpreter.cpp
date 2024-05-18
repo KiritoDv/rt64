@@ -23,14 +23,14 @@ namespace RT64 {
         this->state = state;
     }
 
-    void Interpreter::loadUCodeGBI(uint32_t textAddress, uint32_t dataAddress, bool resetFromTask) {
+    void Interpreter::loadUCodeGBI(ptr_t textAddress, ptr_t dataAddress, bool resetFromTask) {
         if (!resetFromTask) {
             state->flush();
         }
 
-        const uint32_t AddressMask = 0xFFFFF8;
-        const uint32_t maskedTextAddress = textAddress & AddressMask;
-        const uint32_t maskedDataAddress = dataAddress & AddressMask;
+        const ptr_t addressMask = 0xFFFFF8;
+        const ptr_t maskedTextAddress = textAddress & AddressMask;
+        const ptr_t maskedDataAddress = dataAddress & AddressMask;
         if ((UCode.textAddress != maskedTextAddress) || (UCode.dataAddress != maskedDataAddress)) {
             hleGBI = gbiManager.getGBIForUCode(state->RDRAM, maskedTextAddress, maskedDataAddress);
             if (hleGBI != nullptr) {
@@ -129,7 +129,7 @@ namespace RT64 {
 
                 // Check if this command is unfinished and store the partial contents if so.
                 if (dl + cmdLength > dlEnd) {
-                    uint32_t toCopy = (uint32_t)((uintptr_t)dlEnd - (uintptr_t)dl);
+                    ptr_t toCopy = (ptr_t)((uintptr_t)dlEnd - (uintptr_t)dl);
                     memcpy(state->rdp->pendingCommandBuffer.data(), dl, toCopy);
                     state->rdp->pendingCommandCurrentBytes = toCopy;
                     state->rdp->pendingCommandRemainingBytes = cmdLength * sizeof(DisplayList) - toCopy;
@@ -153,7 +153,7 @@ namespace RT64 {
         state->dlCpuProfiler.end();
     }
 
-    void Interpreter::processDisplayLists(uint32_t dlStartAdddress, DisplayList *dlStart) {
+    void Interpreter::processDisplayLists(ptr_t dlStartAdddress, DisplayList *dlStart) {
         assert(hleGBI != nullptr);
 
         state->dlCpuProfiler.start();

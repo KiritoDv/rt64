@@ -5,6 +5,8 @@
 #ifndef RT64_EXTENDED_GBI
 #define RT64_EXTENDED_GBI
 
+#include "rt64_common.h"
+
 // G_SPNOOP on F3D and F3DEX2.
 #ifdef F3DEX_GBI_2
 #   define RT64_HOOK_OPCODE         0xE0
@@ -104,8 +106,8 @@
 // Represents the 8-byte commands in the F3D microcode family
 typedef union {
     struct {
-        unsigned word0;
-        unsigned word1;
+        ptr_t word0;
+        ptr_t word1;
     } values;
     unsigned long long dummy; // Force to 8-byte alignment
 } GfxCommand;
@@ -150,7 +152,7 @@ typedef union {
         GfxCommand *_cmd = (GfxCommand*)(cmd); \
         G_EX_WRITECOMMAND((_cmd + 0), _word0, _word1) \
     )
-    
+
 #define G_EX_COMMAND2(cmd, _word0, _word1, _word2, _word3) \
     DOWHILE( \
         GfxCommand *_cmd = (GfxCommand*)(cmd); \
@@ -158,7 +160,7 @@ typedef union {
         G_EX_WRITECOMMAND((_cmd + 0), _word0, _word1) \
         G_EX_WRITECOMMAND((_cmd + 1), _word2, _word3) \
     )
-    
+
 #define G_EX_COMMAND3(cmd, _word0, _word1, _word2, _word3, _word4, _word5) \
     DOWHILE( \
         GfxCommand *_cmd = (GfxCommand*)(cmd); \
@@ -168,7 +170,7 @@ typedef union {
         G_EX_WRITECOMMAND((_cmd + 1), _word2, _word3) \
         G_EX_WRITECOMMAND((_cmd + 2), _word4, _word5) \
     )
-    
+
 #define G_EX_COMMAND4(cmd, _word0, _word1, _word2, _word3, _word4, _word5, _word6, _word7) \
     DOWHILE( \
         GfxCommand *_cmd = (GfxCommand*)(cmd); \
@@ -227,14 +229,14 @@ typedef union {
         PARAM(s, 16, 16) | PARAM(t, 16, 0), \
         PARAM(dsdx, 16, 16) | PARAM(dtdy, 16, 0) \
     )
-    
+
 #define gEXViewport(cmd, origin, vp) \
     G_EX_COMMAND2(cmd, \
         PARAM(RT64_EXTENDED_OPCODE, 8, 24) | PARAM(G_EX_SETVIEWPORT_V1, 24, 0), \
         PARAM(origin, 12, 0), \
         \
         0, \
-        (unsigned)vp \
+        (ptr_t)vp \
     )
 
 #define gEXSetScissor(cmd, mode, lorigin, rorigin, ulx, uly, lrx, lry) \
@@ -307,7 +309,7 @@ typedef union {
 
 #define gEXMatrixGroupDecomposed(cmd, id, push, proj, pos, rot, scale, skew, persp, vert, tile, order, edit) \
     gEXMatrixGroup(cmd, id, G_EX_INTERPOLATE_DECOMPOSE, push, proj, pos, rot, scale, skew, persp, vert, tile, order, edit)
-    
+
 #define gEXMatrixGroupNoInterpolate(cmd, push, proj, edit) \
     gEXMatrixGroup(cmd, G_EX_ID_IGNORE, G_EX_INTERPOLATE_SIMPLE, push, proj, G_EX_COMPONENT_SKIP, G_EX_COMPONENT_SKIP, G_EX_COMPONENT_SKIP, G_EX_COMPONENT_SKIP, G_EX_COMPONENT_SKIP, G_EX_COMPONENT_SKIP, G_EX_COMPONENT_SKIP, G_EX_ORDER_LINEAR, edit)
 

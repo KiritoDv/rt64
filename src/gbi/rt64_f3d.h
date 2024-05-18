@@ -7,6 +7,7 @@
 #include <unordered_map>
 
 #include "shared/rt64_f3d_defines.h"
+#include "rt64_common.h"
 
 enum class F3DENUM {
     G_MTX_MODELVIEW,
@@ -40,8 +41,8 @@ typedef struct {
     uint32_t dram_stack_size;
     uint32_t output_buff;
     uint32_t output_buff_size;
-    uint32_t data_ptr;
+    ptr_t data_ptr;
     uint32_t data_size;
-    uint32_t yield_data_ptr;
+    ptr_t yield_data_ptr;
     uint32_t yield_data_size;
 } OSTask_t;

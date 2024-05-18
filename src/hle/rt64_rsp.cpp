@@ -90,17 +90,17 @@ namespace RT64 {
         clearExtended();
     }
 
-    uint32_t RSP::fromSegmented(uint32_t segAddress) {
-        return segments[((segAddress) >> 24) & 0x0F] + ((segAddress) & 0x00FFFFFF);
+    ptr_t RSP::fromSegmented(ptr_t segAddress) {
+        return SEG_ADDR(segAddress);
     }
 
-    void RSP::setSegment(uint32_t seg, uint32_t address) {
+    void RSP::setSegment(ptr_t seg, ptr_t address) {
         assert(seg < RSP_MAX_SEGMENTS);
         segments[seg] = address;
     }
 
-    void RSP::matrix(uint32_t address, uint8_t params) {
-        const uint32_t rdramAddress = fromSegmented(address);
+    void RSP::matrix(ptr_t address, uint8_t params) {
+        const ptr_t rdramAddress = fromSegmented(address);
         const FixedMatrix *fixedMatrix = reinterpret_cast<FixedMatrix *>(state->fromRDRAM(rdramAddress));
         const hlslpp::float4x4 floatMatrix = fixedMatrix->toMatrix4x4();
 
@@ -108,8 +108,8 @@ namespace RT64 {
         hlslpp::float4x4 &viewMatrix = viewMatrixStack[projectionMatrixStackSize - 1];
         hlslpp::float4x4 &projMatrix = projMatrixStack[projectionMatrixStackSize - 1];
         hlslpp::float4x4 &viewProjMatrix = viewProjMatrixStack[projectionMatrixStackSize - 1];
-        uint32_t &projectionMatrixSegmentedAddress = projectionMatrixSegmentedAddressStack[projectionMatrixStackSize - 1];
-        uint32_t &projectionMatrixPhysicalAddress = projectionMatrixPhysicalAddressStack[projectionMatrixStackSize - 1];
+        ptr_t &projectionMatrixSegmentedAddress = projectionMatrixSegmentedAddressStack[projectionMatrixStackSize - 1];
+        ptr_t &projectionMatrixPhysicalAddress = projectionMatrixPhysicalAddressStack[projectionMatrixStackSize - 1];
         if (params & projMask) {
             if (params & loadMask) {
                 viewProjMatrix = floatMatrix;
@@ -155,7 +155,7 @@ namespace RT64 {
             modelMatrixSegmentedAddressStack[modelMatrixStackSize - 1] = address;
             modelMatrixPhysicalAddressStack[modelMatrixStackSize - 1] = rdramAddress;
         }
-        
+
         modelViewProjChanged = true;
     }
 
@@ -188,8 +188,8 @@ namespace RT64 {
             projectionMatrixInversed = false;
         }
     }
-    
-    void RSP::insertMatrix(uint32_t address, uint32_t value) {
+
+    void RSP::insertMatrix(ptr_t address, uint32_t value) {
 #   ifdef LOG_SPECIAL_MATRIX_OPERATIONS
         RT64_LOG_PRINTF("RSP::insertMatrix(dst %u, value %u)", dst, value);
 #   endif
@@ -208,10 +208,10 @@ namespace RT64 {
 
         // According to the microcode, the address requires this kind of wrapping
         // to access the real destination.
-        uint32_t dstAddr = (address + ModelViewProjAddress) & 0xFFFFU;
+        ptr_t dstAddr = (address + ModelViewProjAddress) & 0xFFFFU;
 
         // Figure out which matrix should be modified and compute a relative address to it.
-        uint32_t relAddr = 0;
+        ptr_t relAddr = 0;
         hlslpp::float4x4 *dstMat = nullptr;
         hlslpp::float4x4 &viewProjMatrix = viewProjMatrixStack[projectionMatrixStackSize - 1];
         if (dstAddr >= (ModelViewProjAddress + MatrixSize)) {
@@ -253,12 +253,12 @@ namespace RT64 {
         }
     }
 
-    void RSP::forceMatrix(uint32_t address) {
+    void RSP::forceMatrix(ptr_t address) {
 #   ifdef LOG_SPECIAL_MATRIX_OPERATIONS
         RT64_LOG_PRINTF("RSP::forceMatrix(0x%08X)", address);
 #   endif
 
-        const uint32_t rdramAddress = fromSegmented(address);
+        const ptr_t rdramAddress = fromSegmented(address);
         const FixedMatrix *fixedMatrix = reinterpret_cast<FixedMatrix *>(state->fromRDRAM(rdramAddress));
         modelViewProjMatrix = fixedMatrix->toMatrix4x4();
         modelViewProjInserted = true;
@@ -288,25 +288,25 @@ namespace RT64 {
         modelViewProjChanged = changed;
     }
 
-    void RSP::setVertex(uint32_t address, uint8_t vtxCount, uint8_t dstIndex) {
+    void RSP::setVertex(ptr_t address, uint8_t vtxCount, uint8_t dstIndex) {
         if ((dstIndex >= RSP_MAX_VERTICES) || ((dstIndex + vtxCount) > RSP_MAX_VERTICES)) {
             assert(false && "Vertex indices are not valid. DL is possibly corrupted.");
             return;
         }
 
-        const uint32_t rdramAddress = fromSegmented(address);
+        const ptr_t rdramAddress = fromSegmented(address);
         const Vertex *dlVerts = reinterpret_cast<const Vertex *>(state->fromRDRAM(rdramAddress));
         memcpy(&vertices[dstIndex], dlVerts, sizeof(Vertex) * vtxCount);
         setVertexCommon<true>(dstIndex, dstIndex + vtxCount);
     }
-    
-    void RSP::setVertexPD(uint32_t address, uint8_t vtxCount, uint8_t dstIndex) {
+
+    void RSP::setVertexPD(ptr_t address, uint8_t vtxCount, uint8_t dstIndex) {
         if ((dstIndex >= RSP_MAX_VERTICES) || ((dstIndex + vtxCount) > RSP_MAX_VERTICES)) {
             assert(false && "Vertex indices are not valid. DL is possibly corrupted.");
             return;
         }
 
-        const uint32_t rdramAddress = fromSegmented(address);
+        const ptr_t rdramAddress = fromSegmented(address);
         const VertexPD *dlVerts = reinterpret_cast<const VertexPD *>(state->fromRDRAM(rdramAddress));
         for (uint32_t i = 0; i < vtxCount; i++) {
             Vertex &dst = vertices[dstIndex + i];
@@ -326,7 +326,7 @@ namespace RT64 {
         setVertexCommon<true>(dstIndex, dstIndex + vtxCount);
     }
 
-    void RSP::setVertexEXV1(uint32_t address, uint8_t vtxCount, uint8_t dstIndex) {
+    void RSP::setVertexEXV1(ptr_t address, uint8_t vtxCount, uint8_t dstIndex) {
         if ((dstIndex >= RSP_MAX_VERTICES) || ((dstIndex + vtxCount) > RSP_MAX_VERTICES)) {
             assert(false && "Vertex indices are not valid. DL is possibly corrupted.");
             return;
@@ -334,7 +334,7 @@ namespace RT64 {
 
         const int workloadCursor = state->ext.workloadQueue->writeCursor;
         Workload &workload = state->ext.workloadQueue->workloads[workloadCursor];
-        const uint32_t rdramAddress = fromSegmented(address);
+        const ptr_t rdramAddress = fromSegmented(address);
         const VertexEXV1 *dlVerts = reinterpret_cast<const VertexEXV1 *>(state->fromRDRAM(rdramAddress));
         auto &velShorts = workload.drawData.velShorts;
         for (uint32_t i = 0; i < vtxCount; i++) {
@@ -348,7 +348,7 @@ namespace RT64 {
         setVertexCommon<false>(dstIndex, dstIndex + vtxCount);
     }
 
-    void RSP::setVertexColorPD(uint32_t address) {
+    void RSP::setVertexColorPD(ptr_t address) {
         vertexColorPDAddress = fromSegmented(address);
     }
 
@@ -362,7 +362,7 @@ namespace RT64 {
             return Projection::Type::Orthographic;
         }
     }
-    
+
     void RSP::addCurrentProjection(Projection::Type type) {
         const int workloadCursor = state->ext.workloadQueue->writeCursor;
         Workload &workload = state->ext.workloadQueue->workloads[workloadCursor];
@@ -378,7 +378,7 @@ namespace RT64 {
             uint32_t transformsIndex = uint32_t(drawData.viewTransforms.size());
             curViewProjIndex = transformsIndex;
 
-            uint32_t physicalAddress = projectionMatrixPhysicalAddressStack[projectionMatrixStackSize - 1];
+            ptr_t physicalAddress = projectionMatrixPhysicalAddressStack[projectionMatrixStackSize - 1];
             workload.physicalAddressTransformMap.emplace(physicalAddress, uint32_t(drawData.viewProjTransformGroups.size()));
             drawData.viewTransforms.emplace_back(viewMatrixStack[projectionMatrixStackSize - 1]);
             drawData.projTransforms.emplace_back(projMatrixStack[projectionMatrixStackSize - 1]);
@@ -404,7 +404,7 @@ namespace RT64 {
             workload.drawData.transformGroups.emplace_back(extended.modelMatrixIdStack[stackIndex]);
             extended.modelMatrixIdStackChanged = false;
         }
-        
+
         // ModelViewProj is only updated when a vertex is processed and the flag is enabled.
         auto &worldTransforms = workload.drawData.worldTransforms;
         auto &worldTransformGroups = workload.drawData.worldTransformGroups;
@@ -434,7 +434,7 @@ namespace RT64 {
         }
 
         if (addWorldTransform) {
-            uint32_t physicalAddress = modelMatrixPhysicalAddressStack[modelMatrixStackSize - 1];
+            ptr_t physicalAddress = modelMatrixPhysicalAddressStack[modelMatrixStackSize - 1];
             workload.physicalAddressTransformMap.emplace(physicalAddress, uint32_t(worldTransformGroups.size()));
             worldTransformGroups.emplace_back(extended.curModelMatrixIdGroupIndex);
             worldTransformSegmentedAddresses.emplace_back(modelMatrixSegmentedAddressStack[modelMatrixStackSize - 1]);
@@ -539,7 +539,7 @@ namespace RT64 {
                 lookAtChanged = false;
             }
 
-            // Look at index is encoded with one bit to determine if texture gen is enabled, another bit 
+            // Look at index is encoded with one bit to determine if texture gen is enabled, another bit
             // to determine if it's linear texture gen or not, and the rest of the bits to hold the real index.
             curLookAtIndex = RSP_LOOKAT_INDEX_ENABLED;
             curLookAtIndex |= (geometryMode & G_TEXTURE_GEN_LINEAR) ? RSP_LOOKAT_INDEX_LINEAR : 0x0;
@@ -711,8 +711,8 @@ namespace RT64 {
             break;
         }
     }
-    
-    void RSP::branchZ(uint32_t branchDl, uint16_t vtxIndex, uint32_t zValue, DisplayList **dl) {
+
+    void RSP::branchZ(ptr_t branchDl, uint16_t vtxIndex, uint32_t zValue, DisplayList **dl) {
         const bool forceBranch = state->ext.enhancementConfig->f3dex.forceBranch || extended.forceBranch;
         const int workloadCursor = state->ext.workloadQueue->writeCursor;
         const Workload &workload = state->ext.workloadQueue->workloads[workloadCursor];
@@ -720,7 +720,7 @@ namespace RT64 {
         const float screenZ = workload.drawData.posScreen[globalIndex][2] * DepthRange;
         const float zValueFloat = zValue / 65536.0f;
         if (forceBranch || (screenZ < zValueFloat)) {
-            const uint32_t rdramAddress = fromSegmented(branchDl);
+            const ptr_t rdramAddress = fromSegmented(branchDl);
             *dl = reinterpret_cast<DisplayList *>(state->fromRDRAM(rdramAddress)) - 1;
         }
     }
@@ -773,11 +773,11 @@ namespace RT64 {
         state->updateDrawStatusAttribute(DrawAttribute::ObjRenderMode);
     }
 
-    void RSP::setViewport(uint32_t address) {
+    void RSP::setViewport(ptr_t address) {
         setViewport(address, extended.global.viewportOrigin, extended.global.viewportOffsetX, extended.global.viewportOffsetY);
     }
-    
-    void RSP::setViewport(uint32_t address, uint16_t ori, int16_t offx, int16_t offy) {
+
+    void RSP::setViewport(ptr_t address, uint16_t ori, int16_t offx, int16_t offy) {
         const uint32_t rdramAddress = fromSegmented(address);
         const Vp_t *vp = reinterpret_cast<const Vp_t *>(state->fromRDRAM(rdramAddress));
         interop::RSPViewport &viewport = viewportStack[viewportStackSize - 1];
@@ -804,8 +804,8 @@ namespace RT64 {
             viewportChanged = true;
         }
     }
-    
-    void RSP::setLight(uint8_t index, uint32_t address) {
+
+    void RSP::setLight(uint8_t index, ptr_t address) {
         assert((index >= 0) && (index <= RSP_MAX_LIGHTS));
         const uint32_t rdramAddress = fromSegmented(address);
         const uint8_t *data = reinterpret_cast<const uint8_t *>(state->fromRDRAM(rdramAddress));
@@ -834,7 +834,7 @@ namespace RT64 {
         // TODO
     }
 
-    void RSP::setLookAt(uint8_t index, uint32_t address) {
+    void RSP::setLookAt(uint8_t index, ptr_t address) {
         assert(index < 2);
         const uint32_t rdramAddress = fromSegmented(address);
         const DirLight *dirLight = reinterpret_cast<const DirLight *>(state->fromRDRAM(rdramAddress));
@@ -860,7 +860,7 @@ namespace RT64 {
         fog.offset = offset;
         fogChanged = true;
     }
-    
+
     void RSP::setTexture(uint8_t tile, uint8_t level, uint8_t on, uint16_t sc, uint16_t tc) {
         textureState.tile = tile;
         textureState.levels = level + 1;
@@ -905,15 +905,15 @@ namespace RT64 {
         state->rdp->setOtherMode(otherMode.H, otherMode.L);
     }
 
-    void RSP::setColorImage(uint8_t fmt, uint8_t siz, uint16_t width, uint32_t segAddress) {
+    void RSP::setColorImage(uint8_t fmt, uint8_t siz, uint16_t width, ptr_t segAddress) {
         state->rdp->setColorImage(fmt, siz, width, fromSegmented(segAddress));
     }
 
-    void RSP::setDepthImage(uint32_t segAddress) {
+    void RSP::setDepthImage(ptr_t segAddress) {
         state->rdp->setDepthImage(fromSegmented(segAddress));
     }
 
-    void RSP::setTextureImage(uint8_t fmt, uint8_t siz, uint16_t width, uint32_t segAddress) {
+    void RSP::setTextureImage(uint8_t fmt, uint8_t siz, uint16_t width, ptr_t segAddress) {
         state->rdp->setTextureImage(fmt, siz, width, fromSegmented(segAddress));
     }
 
@@ -927,9 +927,9 @@ namespace RT64 {
         if ((geometryMode & cullBothMask) == cullBothMask) {
             return;
         }
-        
+
         state->rdp->checkFramebufferPair();
-        
+
         // We must add the current projection again if we're not in the right state.
         const int workloadCursor = state->ext.workloadQueue->writeCursor;
         Workload &workload = state->ext.workloadQueue->workloads[workloadCursor];
@@ -964,7 +964,7 @@ namespace RT64 {
             c = a;
             a = swap;
         }
-        
+
         auto &faceIndices = workload.drawData.faceIndices;
         auto &viewProjIndices = workload.drawData.viewProjIndices;
         auto &worldIndices = workload.drawData.worldIndices;
@@ -1156,5 +1156,7 @@ namespace RT64 {
         loadMask = gbi->constants[F3DENUM::G_MTX_LOAD];
         pushMask = gbi->constants[F3DENUM::G_MTX_PUSH];
         shadingSmoothMask = gbi->constants[F3DENUM::G_SHADING_SMOOTH];
+    }
+};
     }
 };

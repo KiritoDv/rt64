@@ -18,14 +18,14 @@ namespace RT64 {
         GBIFunction extendedFunction = nullptr;
 
         struct {
-            uint32_t textAddress = 0;
-            uint32_t dataAddress = 0;
+            ptr_t textAddress = 0;
+            ptr_t dataAddress = 0;
         } UCode;
 
         Interpreter();
         void setup(State *state);
-        void loadUCodeGBI(uint32_t textAddress, uint32_t dataAddress, bool resetFromTask);
-        void processRDPLists(uint32_t dlStartAdddress, DisplayList* dlStart, DisplayList* dlEnd);
-        void processDisplayLists(uint32_t dlStartAdddress, DisplayList *dlStart);
+        void loadUCodeGBI(ptr_t textAddress, ptr_t dataAddress, bool resetFromTask);
+        void processRDPLists(ptr_t dlStartAdddress, DisplayList* dlStart, DisplayList* dlEnd);
+        void processDisplayLists(ptr_t dlStartAdddress, DisplayList *dlStart);
     };
 };

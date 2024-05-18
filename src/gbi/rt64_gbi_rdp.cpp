@@ -18,12 +18,12 @@ namespace RT64 {
             const uint8_t fmt = (*dl)->p0(21, 3);
             const uint8_t siz = (*dl)->p0(19, 2);
             const uint16_t width = (*dl)->p0(0, 12) + 1;
-            const uint32_t address = (*dl)->w1;
+            const ptr_t address = (*dl)->w1;
             state->rdp->setColorImage(fmt, siz, width, address);
         }
 
         void setDepthImage(State *state, DisplayList **dl) {
-            const uint32_t address = (*dl)->w1;
+            const ptr_t address = (*dl)->w1;
             state->rdp->setDepthImage(address);
         }
 
@@ -31,7 +31,7 @@ namespace RT64 {
             const uint8_t fmt = (*dl)->p0(21, 3);
             const uint8_t siz = (*dl)->p0(19, 2);
             const uint16_t width = (*dl)->p0(0, 12) + 1;
-            const uint32_t address = (*dl)->w1;
+            const ptr_t address = (*dl)->w1;
             state->rdp->setTextureImage(fmt, siz, width, address);
         }
 
@@ -100,7 +100,7 @@ namespace RT64 {
         void setPrimColor(State *state, DisplayList **dl) {
             // While the manual states that lodMin has 8 bits of precision, the RDP only uses 5 of them.
             const uint8_t lodFrac = (*dl)->p0(0, 8);
-            const uint8_t lodMin = (*dl)->p0(8, 5); 
+            const uint8_t lodMin = (*dl)->p0(8, 5);
             const uint32_t color = (*dl)->w1;
             state->rdp->setPrimColor(lodFrac, lodMin, color);
         }
@@ -131,7 +131,7 @@ namespace RT64 {
             const uint16_t dz = (*dl)->p1(0, 16);
             state->rdp->setPrimDepth(z, dz);
         }
-        
+
         void setScissor(State *state, DisplayList **dl) {
             const uint8_t mode = (*dl)->p1(24, 2);
             const int32_t ulx = (*dl)->p0(12, 12);
@@ -179,12 +179,12 @@ namespace RT64 {
             const int16_t uls = (*dl)->p1(16, 16);
             const int16_t ult = (*dl)->p1(0, 16);
             *dl = *dl + 1;
-            
+
             const int16_t dsdx = (*dl)->p1(16, 16);
             const int16_t dtdy = (*dl)->p1(0, 16);
             state->rdp->drawTexRect(ulx, uly, lrx, lry, tile, uls, ult, dsdx, dtdy, false);
         }
-        
+
         void texrectFlip(State *state, DisplayList **dl) {
             const int32_t ulx = (*dl)->p1(12, 12);
             const int32_t uly = (*dl)->p1(0, 12);
@@ -199,7 +199,7 @@ namespace RT64 {
 
             const int16_t dsdx = (*dl)->p1(16, 16);
             const int16_t dtdy = (*dl)->p1(0, 16);
-            
+
             state->rdp->drawTexRect(ulx, uly, lrx, lry, tile, uls, ult, dsdx, dtdy, true);
         }
 

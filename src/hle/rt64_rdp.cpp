@@ -114,7 +114,7 @@ namespace RT64 {
         crashed = true;
         assert(false && "Crash screen not implemented.");
     }
-    
+
     void RDP::checkFramebufferPair() {
         if (colorImage.changed || depthImage.changed) {
             state->flush();
@@ -129,8 +129,8 @@ namespace RT64 {
             state->updateDrawStatusAttribute(DrawAttribute::FramebufferPair);
         }
     }
-    
-    void RDP::checkFramebufferOverlap(uint32_t tmemStart, uint32_t tmemWords, uint32_t tmemMask, uint32_t addressStart, uint32_t addressEnd, uint32_t tileWidth, uint32_t tileHeight, bool RGBA32, bool makeTileCopy) {
+
+    void RDP::checkFramebufferOverlap(uint32_t tmemStart, uint32_t tmemWords, uint32_t tmemMask, ptr_t addressStart, ptr_t addressEnd, uint32_t tileWidth, uint32_t tileHeight, bool RGBA32, bool makeTileCopy) {
         auto &fbManager = state->framebufferManager;
         Framebuffer *fb = fbManager.findMostRecentContaining(addressStart, addressEnd);
         if (fb != nullptr) {
@@ -162,15 +162,15 @@ namespace RT64 {
                     regionIt->fbTile = fbTile;
                     regionIt->tileCopyId = newTileId;
                 }
-                
+
                 // Queue the operation to make the tile copy.
                 FramebufferOperation fbOp = fbManager.makeTileCopyTMEM(newTileId, fbTile);
                 state->drawFbOperations.emplace_back(fbOp);
             }
         }
     }
-    
-    void RDP::checkImageOverlap(uint32_t addressStart, uint32_t addressEnd) {
+
+    void RDP::checkImageOverlap(ptr_t addressStart, ptr_t addressEnd) {
         const int workloadCursor = state->ext.workloadQueue->writeCursor;
         Workload &workload = state->ext.workloadQueue->workloads[workloadCursor];
         FramebufferPair &fbPair = workload.fbPairs[workload.currentFramebufferPairIndex()];
@@ -178,7 +178,7 @@ namespace RT64 {
         if (colorRect.isEmpty()) {
             return;
         }
-        
+
         const uint32_t imageWidth = fbPair.colorImage.width;
         const uint32_t colorRowStart = colorRect.top(false);
         const uint32_t colorRowEnd = colorRect.bottom(true);
@@ -212,7 +212,7 @@ namespace RT64 {
             state->submitFramebufferPair(colorImage.changed ? FramebufferPair::FlushReason::SamplingFromColorImage : FramebufferPair::FlushReason::SamplingFromDepthImage);
         }
     }
-    
+
     int32_t RDP::movedFromOrigin(int32_t x, uint16_t ori) {
         if (ori < G_EX_ORIGIN_NONE) {
             return x + ((ori * colorImage.width * 4) / G_EX_ORIGIN_RIGHT);
@@ -222,7 +222,7 @@ namespace RT64 {
         }
     };
 
-    void RDP::setColorImage(uint8_t fmt, uint8_t siz, uint16_t width, uint32_t address) {
+    void RDP::setColorImage(uint8_t fmt, uint8_t siz, uint16_t width, ptr_t address) {
         // Make sure the new color image is actually different. Some games will set the color image
         // multiple times despite setting the exact same parameters.
         const uint32_t newAddress = address & RDP_ADDRESS_MASK;
@@ -243,7 +243,7 @@ namespace RT64 {
         }
     }
 
-    void RDP::setDepthImage(uint32_t address) {
+    void RDP::setDepthImage(ptr_t address) {
         const uint32_t newAddress = address & RDP_ADDRESS_MASK;
         if (depthImage.address != newAddress) {
             depthImage.address = newAddress;
@@ -255,7 +255,7 @@ namespace RT64 {
         }
     }
 
-    void RDP::setTextureImage(uint8_t fmt, uint8_t siz, uint16_t width, uint32_t address) {
+    void RDP::setTextureImage(uint8_t fmt, uint8_t siz, uint16_t width, ptr_t address) {
         texture.fmt = fmt;
         texture.siz = siz;
         texture.width = width;
@@ -323,7 +323,7 @@ namespace RT64 {
         t.lrt = lrt;
         state->updateDrawStatusAttribute(DrawAttribute::Texture);
     }
-    
+
     template<bool RGBA32 = false, bool TLUT = false>
     __forceinline void loadWord(uint8_t *TMEM, uint32_t tmemAddress, uint32_t tmemXorMask, const uint8_t *RDRAM, uint32_t textureAddress) {
         // Only sample the first two bytes in TLUT mode.
@@ -360,7 +360,7 @@ namespace RT64 {
         uint32_t tmemStride, uint32_t wordsPerRow, uint32_t rowCount, uint32_t dxtIncrement = 0)
     {
         assert((!BLOCK || (rowCount == 1)) && "Load block must behave as if it only loads one row of data.");
-        
+
         const uint32_t DXTSwap = 0x800;
         uint32_t textureAddress, tmemAddress, wordCount, tmemMask, tmemAdvance;
         if constexpr (RGBA32) {
@@ -395,7 +395,7 @@ namespace RT64 {
             textureAddress += textureAdvance;
             tmemAddress = (tmemAddress + tmemAdvance) & tmemMask;
         };
-        
+
         uint32_t textureAddressRow = textureStart;
         uint32_t tmemAddressRow = tmemStart & tmemMask;
         auto loadRowStep = [&]() {
@@ -651,7 +651,7 @@ namespace RT64 {
         if ((t.uls > t.lrs) || (t.lrs >= 0x800)) {
             return;
         }
-        
+
 #   ifdef ASSERT_LOAD_METHODS
         assert((t.uls != t.lrs) || ((t.uls & 0x3) == 0) && "Unknown and possibly undefined hardware behavior.");
         assert((t.siz == texture.siz) && "Different tile and texture sizes are not currently supported.");
@@ -710,7 +710,7 @@ namespace RT64 {
         assert((texture.siz == G_IM_SIZ_16b) && "Non-16 bit textures are not currently supported.");
         assert((t.siz == G_IM_SIZ_4b) && "Non-4 bit tiles are not currently supported.");
 #   endif
-        
+
         // Check for warnings in developer mode.
         const int workloadCursor = state->ext.workloadQueue->writeCursor;
         Workload &workload = state->ext.workloadQueue->workloads[workloadCursor];
@@ -725,7 +725,7 @@ namespace RT64 {
                 warning.load.index = loadIndex;
                 workload.commandWarnings.emplace_back(warning);
             }
-            
+
             if (t.siz != G_IM_SIZ_4b) {
                 CommandWarning warning = CommandWarning::format("Load Operation #%u: RDP::loadTLUT called with incorrect tile descriptor #%u with siz %u. "
                     "Loading TLUTs that don't use 4-bit formats as their tile size might not work correctly.", loadIndex, tile, t.siz);
@@ -777,7 +777,7 @@ namespace RT64 {
             state->updateDrawStatusAttribute(DrawAttribute::EnvColor);
         }
     }
-    
+
     void RDP::setPrimColor(uint8_t lodFrac, uint8_t lodMin, uint32_t color) {
         hlslpp::float2 &primLOD = primLODStack[primColorStackSize - 1];
         primLOD.x = lodFrac / 256.0f;
@@ -876,7 +876,7 @@ namespace RT64 {
         otherMode.L = low;
         state->updateDrawStatusAttribute(DrawAttribute::OtherMode);
     }
-    
+
     void RDP::setPrimDepth(uint16_t z, uint16_t dz) {
         const float Fixed15ToFloat = 1.0f / 32767.0f;
         const float Fixed16ToFloat = 1.0f / 65535.0f;
@@ -889,7 +889,7 @@ namespace RT64 {
     void RDP::setScissor(uint8_t mode, int32_t ulx, int32_t uly, int32_t lrx, int32_t lry) {
         setScissor(mode, ulx, uly, lrx, lry, extended.global.scissor);
     }
-    
+
     void RDP::setScissor(uint8_t mode, int32_t ulx, int32_t uly, int32_t lrx, int32_t lry, const ExtendedAlignment &extAlignment) {
         FixedRect &scissorRect = scissorRectStack[scissorStackSize - 1];
         scissorRect.ulx = std::clamp(movedFromOrigin(ulx + extAlignment.leftOffset, extAlignment.leftOrigin), extAlignment.leftBound, extAlignment.rightBound);
@@ -978,7 +978,7 @@ namespace RT64 {
         extended.drawExtendedFlags.forceUpscale2D = force;
         state->updateDrawStatusAttribute(DrawAttribute::ExtendedFlags);
     }
-    
+
     void RDP::forceTrueBilerp(uint8_t mode) {
         extended.drawExtendedFlags.forceTrueBilerp = mode;
         state->updateDrawStatusAttribute(DrawAttribute::ExtendedFlags);
@@ -996,7 +996,7 @@ namespace RT64 {
         extended.global.rect = ExtendedAlignment();
         extended.global.scissor = ExtendedAlignment();
     }
-    
+
     void RDP::drawTris(uint32_t triCount, const float *pos, const float *tc, const float *col, uint8_t tile, uint8_t levels) {
         // Levels is expected to be above 0 elsewhere.
         levels += 1;
@@ -1071,7 +1071,7 @@ namespace RT64 {
     void RDP::drawRect(int32_t ulx, int32_t uly, int32_t lrx, int32_t lry, int16_t uls, int16_t ult, int16_t dsdx, int16_t dtdy, bool flip) {
         drawRect(ulx, uly, lrx, lry, uls, ult, dsdx, dtdy, flip, extended.global.rect);
     }
-    
+
     void RDP::drawRect(int32_t ulx, int32_t uly, int32_t lrx, int32_t lry, int16_t uls, int16_t ult, int16_t dsdx, int16_t dtdy, bool flip, const ExtendedAlignment &extAlignment) {
         // Add global offsets to the coordinates.
         ulx += extAlignment.leftOffset;
@@ -1110,7 +1110,7 @@ namespace RT64 {
                 }
             }
         }
-        
+
         bool flushedState = state->checkDrawState();
 
         // We only change these once the draw state has been checked.
@@ -1176,7 +1176,7 @@ namespace RT64 {
         triTcFloats.emplace_back(flip ? v1 : v2);
         drawCall.triangleCount += 2;
 
-        // Update the tracked texcoords for the used tiles. Use scissor intersection to figure out 
+        // Update the tracked texcoords for the used tiles. Use scissor intersection to figure out
         // what the bounds of the real sampling will be if necessary.
         const bool computeIntersection = !scissorRect.isNull() && !scissorRect.fullyInside(drawRect);
         if (computeIntersection) {
@@ -1203,7 +1203,7 @@ namespace RT64 {
     void RDP::drawTexRect(int32_t ulx, int32_t uly, int32_t lrx, int32_t lry, uint8_t tile, int16_t uls, int16_t ult, int16_t dsdx, int16_t dtdy, bool flip) {
         drawTexRect(ulx, uly, lrx, lry, tile, uls, ult, dsdx, dtdy, flip, extended.global.rect);
     }
-    
+
     void RDP::drawTexRect(int32_t ulx, int32_t uly, int32_t lrx, int32_t lry, uint8_t tile, int16_t uls, int16_t ult, int16_t dsdx, int16_t dtdy, bool flip, const ExtendedAlignment &extAlignment) {
 #   ifdef LOG_TEXRECT_METHODS
         RT64_LOG_PRINTF("RDP::drawTexRect(ulx %d, uly %d, lrx %d, lry %d, tile %u, uls %d, ult %d, dsdx %d, dtdy %d, flip %u)", ulx, uly, lrx, lry, tile, uls, ult, dsdx, dtdy, flip);
@@ -1217,7 +1217,7 @@ namespace RT64 {
             drawCall.textureLevels = 1;
             state->updateDrawStatusAttribute(DrawAttribute::Texture);
         }
-        
+
         // Divide dsdx by 4 and add an extra pixel to the edges if it uses copy mode.
         const bool usesCopyMode = (otherMode.cycleType() == G_CYC_COPY);
         if (usesCopyMode) {
