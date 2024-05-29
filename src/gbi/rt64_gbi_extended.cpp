@@ -130,7 +130,7 @@ namespace RT64 {
         }
 
         void matrixGroupCommand(State *state, DisplayList **dl, bool idIsAddress, bool editGroup) {
-            const uint32_t id = (*dl)->w1;
+            const ptr_t id = (*dl)->w1;
             *dl = *dl + 1;
             const uint8_t push = (*dl)->p0(0, 1);
             const uint8_t proj = (*dl)->p0(1, 1);
